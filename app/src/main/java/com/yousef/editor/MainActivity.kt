@@ -27,7 +27,7 @@ import com.yousef.editor.tabs.TabManager.TabChangeListener
 import java.net.HttpURLConnection
 import java.net.URL
 
-class MainActivity : AppCompatActivity(), TabChangeListener, ServiceConnection {
+class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceConnection {
 
     // Core components
     private lateinit var webView: WebView
