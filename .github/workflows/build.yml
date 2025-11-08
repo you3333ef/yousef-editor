@@ -37,9 +37,10 @@ jobs:
         mv gradle-8.2 /opt/gradle
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
-    - name: Generate signing key
+    - name: Generate signing keys
       run: |
         keytool -genkey -v -keystore yousef-editor.keystore -alias yousef-editor -keyalg RSA -keysize 2048 -validity 10000 -storepass android123 -keypass android123 -dname "CN=yousef-editor, OU=Development, O=You, L=City, S=State, C=US"
+        keytool -genkey -v -keystore app/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug, OU=Android, O=Android, L=Mountain View, S=CA, C=US"
 
     - name: Build with Gradle
       run: |
