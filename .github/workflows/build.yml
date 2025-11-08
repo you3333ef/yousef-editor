@@ -38,10 +38,17 @@ jobs:
         echo "/opt/gradle/bin" >> $GITHUB_PATH
 
     - name: Build with Gradle
-      run: gradle assembleRelease
+      run: gradle assembleRelease --stacktrace --info
+
+    - name: Check build outputs
+      run: |
+        find app/build -type f -name "*.apk" 2>/dev/null || echo "No APK found"
+        ls -la app/build/outputs/apk/ 2>/dev/null || echo "No outputs directory"
+        ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "No release directory"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
+      if: success()
       with:
         name: app-release
-        path: app/build/outputs/apk/release/app-release.apk
+        path: app/build/outputs/apk/release/*.apk
