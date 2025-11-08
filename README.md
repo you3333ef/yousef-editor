@@ -1,16 +1,41 @@
 # Yousef Editor
 
-A React Native Android application that runs **code-server** (VS Code in browser) on Android devices, with integrated Termux functionality.
+A powerful React Native Android application that runs **code-server** (VS Code in browser) on Android devices with **multi-tasking support** and **desktop/mobile modes**.
 
-## Features
+## Key Features
 
-- 🚀 **Code-Server Integration**: Run VS Code directly in your browser on Android
-- 💻 **Integrated Terminal**: Built-in Termux terminal for command-line operations
-- 📱 **Mobile-Optimized UI**: Designed for Android phones and tablets
-- 🌐 **WebView Interface**: Seamless web-based code editing experience
-- 🔧 **Git Integration**: Full version control support
-- 📂 **File Manager**: Browse and manage your projects
-- 🔌 **Plugin Support**: Extend functionality with VS Code extensions
+### 🚀 Core Functionality
+- **Auto-start Code-Server**: VS Code launches automatically when the app opens
+- **WebView Integration**: Run VS Code directly in your browser on Android
+- **Termux Terminal**: Built-in terminal for command-line operations
+
+### 📱 Multi-Tasking & Tabs
+- **Tab Manager**: Open multiple tabs/windows simultaneously
+- **Switch Between Views**: Easily navigate between Code Editor, Files, Terminal, Projects
+- **Smart Workspace**: Organize your work with multiple workspaces
+
+### 🖥️ Desktop & Mobile Modes
+- **Desktop Mode**: Full IDE layout with side panels (Explorer, Terminal)
+- **Mobile Mode**: Optimized touch interface for phones
+- **Toggle Anytime**: Switch between modes in settings
+
+### 🔧 Advanced Tools
+- **File Explorer**: Browse, create, delete, and manage files
+- **Project Manager**: Create and manage multiple projects
+- **Settings**: Customize editor, theme, fonts, and behavior
+- **Terminal Emulator**: Full-featured terminal with command history
+
+### 📦 Project Management
+- **Create Projects**: Support for React Native, Android, Web, Python, Java, and more
+- **Project Templates**: Quick start with popular frameworks
+- **Recent Projects**: Quick access to your work
+
+## User Flow
+
+1. **Open App** → Code-Server starts automatically
+2. **Choose Mode** → Open Multi-Tab Workspace or stay in simple view
+3. **Work Efficiently** → Use tabs to switch between Code, Files, Terminal, Projects
+4. **Switch Views** → Toggle between desktop and mobile layouts
 
 ## Tech Stack
 

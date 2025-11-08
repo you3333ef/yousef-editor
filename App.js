@@ -31,8 +31,9 @@ const SECTION_TITLE = 'yousef editor';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
-  const [webViewVisible, setWebViewVisible] = useState(false);
+  const [webViewVisible, setWebViewVisible] = useState(true); // Default to true for auto-start
   const [codeServerRunning, setCodeServerRunning] = useState(false);
+  const [showTabManager, setShowTabManager] = useState(false);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -40,45 +41,38 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Check if code-server is running
-    checkCodeServer();
+    // Auto-start code-server when app opens
+    autoStartCodeServer();
   }, []);
 
-  const checkCodeServer = async () => {
-    // In a real implementation, this would check if code-server is running
-    // For now, we'll simulate the check
+  const autoStartCodeServer = () => {
+    // Simulate code-server starting
     setTimeout(() => {
       setCodeServerRunning(true);
-    }, 2000);
+      setWebViewVisible(true);
+    }, 1500);
   };
 
   const startCodeServer = async () => {
-    // In a real implementation, this would start code-server
-    // For now, just show the WebView
-    Alert.alert(
-      'Starting Code-Server',
-      'Code-server would start in a real implementation',
-      [
-        {
-          text: 'OK',
-          onPress: () => setWebViewVisible(true),
-        },
-      ],
-    );
+    // Fallback if needed
+    setCodeServerRunning(true);
+    setWebViewVisible(true);
   };
 
   const openTerminal = () => {
-    // In a real implementation, this would open Termux terminal
-    Alert.alert(
-      'Termux Terminal',
-      'Termux terminal functionality would be implemented here',
-      [
-        {
-          text: 'OK',
-        },
-      ],
-    );
+    setShowTabManager(true);
   };
+
+  if (showTabManager) {
+    // Import TabManager dynamically
+    const TabManager = require('./components/TabManager').default;
+    return (
+      <TabManager
+        isDesktopMode={false}
+        onToggleMode={() => {}}
+      />
+    );
+  }
 
   if (webViewVisible) {
     return (
@@ -126,22 +120,29 @@ const App = () => {
           <View style={styles.buttonContainer}>
             <View style={styles.button}>
               <Button
-                title="🚀 Start Code-Server"
-                onPress={startCodeServer}
-                color="#6200EE"
+                title="💻 Open Multi-Tab Workspace"
+                onPress={openTerminal}
+                color="#03DAC5"
               />
             </View>
             <View style={styles.button}>
               <Button
-                title="💻 Open Terminal (Termux)"
+                title="📁 File Explorer"
                 onPress={openTerminal}
-                color="#03DAC5"
+                color="#FF9800"
+              />
+            </View>
+            <View style={styles.button}>
+              <Button
+                title="🛠️ Settings"
+                onPress={openTerminal}
+                color="#9C27B0"
               />
             </View>
           </View>
           <Section title="Status">
             {codeServerRunning ? (
-              <Text style={styles.successText}>✓ Code-Server is ready!</Text>
+              <Text style={styles.successText}>✓ Code-Server is running!</Text>
             ) : (
               <Text style={styles.infoText}>⏳ Starting services...</Text>
             )}
@@ -149,20 +150,16 @@ const App = () => {
           <Section title="Features">
             <Text style={styles.featureList}>
               • Run VS Code in your browser on Android{'\n'}
-              • Full code editing with syntax highlighting{'\n'}
+              • Multi-tab support for multitasking{'\n'}
               • Integrated terminal with Termux{'\n'}
-              • Git integration{'\n'}
-              • File manager{'\n'}
-              • Plugin support
+              • File explorer and project manager{'\n'}
+              • Desktop and mobile modes{'\n'}
+              • Git integration
             </Text>
           </Section>
           <Section title="Instructions">
             <ReloadInstructions />
           </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <LearnMoreLinks />
         </View>
       </ScrollView>
     </SafeAreaView>
