@@ -42,7 +42,9 @@ jobs:
         keytool -genkey -v -keystore yousef-editor.keystore -alias yousef-editor -keyalg RSA -keysize 2048 -validity 10000 -storepass android123 -keypass android123 -dname "CN=yousef-editor, OU=Development, O=You, L=City, S=State, C=US"
 
     - name: Build with Gradle
-      run: gradle assembleRelease --stacktrace --info
+      run: |
+        gradle clean assembleRelease
+        cat app/build.gradle
 
     - name: Check build outputs
       run: |
