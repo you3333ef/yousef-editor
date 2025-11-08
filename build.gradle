@@ -1,10 +1,9 @@
 buildscript {
     ext {
-        buildToolsVersion = "33.0.0"
-        minSdkVersion = 24
+        buildToolsVersion = "34.0.0"
+        minSdkVersion = 21
         compileSdkVersion = 34
         targetSdkVersion = 34
-        ndkVersion = "23.1.7779620"
     }
     repositories {
         google()
@@ -12,7 +11,6 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.1.4")
-        classpath("com.facebook.react:react-native-gradle-plugin")
     }
 }
 
@@ -20,7 +18,5 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url "https://www.jitpack.io" }
-        maven { url "https://jcenter.bintray.com/" }
     }
 }

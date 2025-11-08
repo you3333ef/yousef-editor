@@ -1,8 +1,20 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert, TextInput, FlatList} from 'react-native';
+import AIProvider from '../services/AIProvider';
+import SettingsManager from '../utils/SettingsManager';
 
 const Settings = ({isDesktopMode, onToggleMode}) => {
   const [settings, setSettings] = useState({
+    selectedProvider: 'anthropic',
+    anthropicApiKey: '',
+    openaiApiKey: '',
+    googleApiKey: '',
+    cohereApiKey: '',
+    togetherApiKey: '',
+    openrouterApiKey: '',
+    minimaxApiKey: '',
+    selectedModel: 'claude-3-sonnet-20240229',
+    customEndpoint: '',
     darkTheme: true,
     autoSave: true,
     showMinimap: true,
@@ -10,271 +22,316 @@ const Settings = ({isDesktopMode, onToggleMode}) => {
     wordWrap: true,
     showLineNumbers: true,
     codeServerPort: '8080',
-    terminalTheme: 'dark',
-    autoComplete: true,
-    showWhitespace: false,
+    startMode: 'code-server',
+    autoStartCodeServer: true,
+    restoreSession: true,
+    startInDesktopMode: false,
   });
 
-  const [isEditingPort, setIsEditingPort] = useState(false);
+  const [showApiKey, setShowApiKey] = useState({
+    anthropic: false,
+    openai: false,
+    google: false,
+    cohere: false,
+    together: false,
+    openrouter: false,
+    minimax: false,
+  });
+  const [activeTab, setActiveTab] = useState('api');
+  const [providers, setProviders] = useState({});
+  const [models, setModels] = useState([]);
+
+  useEffect(() => {
+    loadSettings();
+    loadProviders();
+  }, []);
+
+  const loadSettings = async () => {
+    const apiSettings = await SettingsManager.loadApiSettings();
+    const startupSettings = await SettingsManager.loadStartupSettings();
+    const editorSettings = await SettingsManager.loadEditorSettings();
+    setSettings({...settings, ...apiSettings, ...startupSettings, ...editorSettings});
+  };
+
+  const loadProviders = async () => {
+    const aiProvider = await AIProvider.init();
+    setProviders(aiProvider.getProviders());
+    updateModels(aiProvider, settings.selectedProvider);
+  };
+
+  const updateModels = (aiProvider, providerId) => {
+    const providerModels = aiProvider.getModels(providerId);
+    setModels(providerModels);
+  };
 
   const updateSetting = (key, value) => {
     setSettings(prev => ({...prev, [key]: value}));
   };
 
-  const resetSettings = () => {
-    Alert.alert(
-      'Reset Settings',
-      'Are you sure you want to reset all settings to default?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: () => {
-            setSettings({
-              darkTheme: true,
-              autoSave: true,
-              showMinimap: true,
-              fontSize: 14,
-              wordWrap: true,
-              showLineNumbers: true,
-              codeServerPort: '8080',
-              terminalTheme: 'dark',
-              autoComplete: true,
-              showWhitespace: false,
-            });
-          },
-        },
-      ]
-    );
+  const saveSettings = async () => {
+    await SettingsManager.saveApiSettings({
+      selectedProvider: settings.selectedProvider,
+      anthropicApiKey: settings.anthropicApiKey,
+      openaiApiKey: settings.openaiApiKey,
+      googleApiKey: settings.googleApiKey,
+      cohereApiKey: settings.cohereApiKey,
+      togetherApiKey: settings.togetherApiKey,
+      openrouterApiKey: settings.openrouterApiKey,
+      minimaxApiKey: settings.minimaxApiKey,
+      selectedModel: settings.selectedModel,
+      customEndpoint: settings.customEndpoint,
+      enableAI: true,
+    });
+
+    await SettingsManager.saveStartupSettings({
+      startMode: settings.startMode,
+      autoStartCodeServer: settings.autoStartCodeServer,
+      restoreSession: settings.restoreSession,
+      startInDesktopMode: settings.startInDesktopMode,
+    });
+
+    await SettingsManager.saveEditorSettings({
+      fontSize: settings.fontSize,
+      theme: settings.darkTheme ? 'dark' : 'light',
+      wordWrap: settings.wordWrap,
+      showLineNumbers: settings.showLineNumbers,
+      showMinimap: settings.showMinimap,
+      autoComplete: true,
+      showWhitespace: false,
+    });
+
+    Alert.alert('Settings Saved', 'All settings have been saved successfully');
   };
 
-  const exportSettings = () => {
-    Alert.alert('Export Settings', 'Settings exported to /yousef-editor/settings.json');
+  const testConnection = async () => {
+    const apiKey = settings[`${settings.selectedProvider}ApiKey`];
+    if (!apiKey) {
+      Alert.alert('Error', 'Please enter an API key first');
+      return;
+    }
+
+    Alert.alert('Testing', 'Testing connection...\n\nPlease wait...', [{text: 'OK'}]);
+
+    try {
+      const result = await providers[settings.selectedProvider]?.testConnection
+        ? await providers[settings.selectedProvider].testConnection(settings.selectedProvider, apiKey)
+        : await AIProvider.testConnection(settings.selectedProvider, apiKey);
+
+      if (result.success) {
+        Alert.alert(
+          '✅ Connection Successful',
+          `${result.message || result}\n\nProvider: ${result.provider || settings.selectedProvider}\nStatus: ${result.status || 'Active'}`
+        );
+      } else {
+        Alert.alert(
+          '❌ Connection Failed',
+          result.error || 'Unknown error occurred'
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        '❌ Error',
+        `Failed to test connection: ${error.message}`
+      );
+    }
   };
 
-  const importSettings = () => {
-    Alert.alert('Import Settings', 'Settings imported successfully');
-  };
+  const tabs = [
+    { id: 'api', name: '🤖 AI Providers' },
+    { id: 'startup', name: '🚀 Startup' },
+    { id: 'editor', name: '📝 Editor' },
+    { id: 'display', name: '🖥️ Display' },
+  ];
 
-  const renderSettingRow = (title, description, children) => (
+  const renderApiSettings = () => (
+    <ScrollView style={styles.section}>
+      <Text style={styles.sectionTitle}>AI Providers Configuration</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Select AI Provider</Text>
+        <FlatList
+          data={Object.values(providers)}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({item}) => {
+            const providerId = Object.keys(providers).find(k => providers[k] === item);
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.providerButton,
+                  settings.selectedProvider === providerId && styles.providerButtonActive
+                ]}
+                onPress={() => {
+                  updateSetting('selectedProvider', providerId);
+                  updateModels(AIProvider, providerId);
+                }}>
+                <Text style={styles.providerButtonText}>{item.name}</Text>
+              </TouchableOpacity>
+            );
+          }}
+          keyExtractor={(item) => item.name}
+        />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>
+          {providers[settings.selectedProvider]?.name} API Key
+        </Text>
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.input}
+            value={settings[`${settings.selectedProvider}ApiKey`]}
+            onChangeText={(text) => updateSetting(`${settings.selectedProvider}ApiKey`, text)}
+            placeholder={settings.selectedProvider === 'anthropic' ? 'sk-ant-...' : 'Enter API key'}
+            placeholderTextColor="#666"
+            secureTextEntry={!showApiKey[settings.selectedProvider]}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.showButton}
+            onPress={() => setShowApiKey({...showApiKey, [settings.selectedProvider]: !showApiKey[settings.selectedProvider]})}>
+            <Text style={styles.showButtonText}>
+              {showApiKey[settings.selectedProvider] ? '👁️' : '👁️‍🗨️'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Model</Text>
+        {models.map(model => (
+          <TouchableOpacity
+            key={model.id}
+            style={[
+              styles.modelOption,
+              settings.selectedModel === model.id && styles.modelOptionActive
+            ]}
+            onPress={() => updateSetting('selectedModel', model.id)}>
+            <Text style={[
+              styles.modelName,
+              settings.selectedModel === model.id && styles.modelNameActive
+            ]}>
+              {model.name}
+            </Text>
+            <Text style={[
+              styles.modelDescription,
+              settings.selectedModel === model.id && styles.modelDescriptionActive
+            ]}>
+              {model.description}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TouchableOpacity style={styles.testButton} onPress={testConnection}>
+        <Text style={styles.testButtonText}>🔍 Test Connection</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
+  const renderStartupSettings = () => (
+    <ScrollView style={styles.section}>
+      <Text style={styles.sectionTitle}>Startup Behavior</Text>
+
+      {renderToggleRow('Auto-Start Code-Server', 'autoStartCodeServer')}
+      {renderToggleRow('Restore Last Session', 'restoreSession')}
+      {renderToggleRow('Start in Desktop Mode', 'startInDesktopMode')}
+    </ScrollView>
+  );
+
+  const renderEditorSettings = () => (
+    <ScrollView style={styles.section}>
+      <Text style={styles.sectionTitle}>Code Editor</Text>
+
+      {renderToggleRow('Show Line Numbers', 'showLineNumbers')}
+      {renderToggleRow('Word Wrap', 'wordWrap')}
+      {renderToggleRow('Show Minimap', 'showMinimap')}
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <Text style={styles.settingTitle}>Font Size</Text>
+          <Text style={styles.settingDescription}>{settings.fontSize}px</Text>
+        </View>
+        <View style={styles.fontSizeControls}>
+          <TouchableOpacity
+            style={styles.sizeButton}
+            onPress={() => updateSetting('fontSize', Math.max(10, settings.fontSize - 1))}>
+            <Text style={styles.sizeButtonText}>-</Text>
+          </TouchableOpacity>
+          <Text style={styles.fontSizeValue}>{settings.fontSize}</Text>
+          <TouchableOpacity
+            style={styles.sizeButton}
+            onPress={() => updateSetting('fontSize', Math.min(24, settings.fontSize + 1))}>
+            <Text style={styles.sizeButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  const renderDisplaySettings = () => (
+    <ScrollView style={styles.section}>
+      <Text style={styles.sectionTitle}>Display</Text>
+
+      <View style={styles.settingRow}>
+        <View style={styles.settingInfo}>
+          <Text style={styles.settingTitle}>Desktop Mode</Text>
+          <Text style={styles.settingDescription}>Toggle between mobile and desktop layout</Text>
+        </View>
+        <Switch
+          value={isDesktopMode}
+          onValueChange={onToggleMode}
+          trackColor={{false: '#3e3e42', true: '#0e639c'}}
+        />
+      </View>
+
+      {renderToggleRow('Dark Theme', 'darkTheme')}
+    </ScrollView>
+  );
+
+  const renderToggleRow = (title, key) => (
     <View style={styles.settingRow}>
       <View style={styles.settingInfo}>
         <Text style={styles.settingTitle}>{title}</Text>
-        {description && <Text style={styles.settingDescription}>{description}</Text>}
       </View>
-      {children}
+      <Switch
+        value={settings[key]}
+        onValueChange={(value) => updateSetting(key, value)}
+        trackColor={{false: '#3e3e42', true: '#0e639c'}}
+      />
     </View>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Display Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Display</Text>
-
-        {renderSettingRow(
-          'Desktop Mode',
-          'Toggle between mobile and desktop layout',
-          <Switch
-            value={isDesktopMode}
-            onValueChange={onToggleMode}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-            thumbColor={isDesktopMode ? '#ffffff' : '#f4f3f4'}
-          />
-        )}
-
-        {renderSettingRow(
-          'Dark Theme',
-          'Use dark theme for the interface',
-          <Switch
-            value={settings.darkTheme}
-            onValueChange={(value) => updateSetting('darkTheme', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Font Size',
-          `${settings.fontSize}px`,
-          <View style={styles.fontSizeControls}>
-            <TouchableOpacity
-              style={styles.sizeButton}
-              onPress={() => updateSetting('fontSize', Math.max(10, settings.fontSize - 1))}>
-              <Text style={styles.sizeButtonText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.fontSizeValue}>{settings.fontSize}</Text>
-            <TouchableOpacity
-              style={styles.sizeButton}
-              onPress={() => updateSetting('fontSize', Math.min(24, settings.fontSize + 1))}>
-              <Text style={styles.sizeButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Editor Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Code Editor</Text>
-
-        {renderSettingRow(
-          'Show Line Numbers',
-          'Display line numbers in the editor',
-          <Switch
-            value={settings.showLineNumbers}
-            onValueChange={(value) => updateSetting('showLineNumbers', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Word Wrap',
-          'Wrap long lines to the next line',
-          <Switch
-            value={settings.wordWrap}
-            onValueChange={(value) => updateSetting('wordWrap', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Show Minimap',
-          'Display code minimap on the right side',
-          <Switch
-            value={settings.showMinimap}
-            onValueChange={(value) => updateSetting('showMinimap', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Auto Complete',
-          'Enable intelligent code completion',
-          <Switch
-            value={settings.autoComplete}
-            onValueChange={(value) => updateSetting('autoComplete', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Show Whitespace',
-          'Display whitespace characters',
-          <Switch
-            value={settings.showWhitespace}
-            onValueChange={(value) => updateSetting('showWhitespace', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-      </View>
-
-      {/* Code-Server Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Code-Server</Text>
-
-        {renderSettingRow(
-          'Auto Save',
-          'Automatically save files on change',
-          <Switch
-            value={settings.autoSave}
-            onValueChange={(value) => updateSetting('autoSave', value)}
-            trackColor={{false: '#3e3e42', true: '#0e639c'}}
-          />
-        )}
-
-        {renderSettingRow(
-          'Server Port',
-          `Port ${settings.codeServerPort}`,
-          <TouchableOpacity
-            style={styles.portButton}
-            onPress={() => setIsEditingPort(true)}>
-            <Text style={styles.portButtonText}>Change</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Terminal Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Terminal</Text>
-
-        {renderSettingRow(
-          'Terminal Theme',
-          settings.terminalTheme,
-          <View style={styles.themeSelector}>
+    <View style={styles.container}>
+      <View style={styles.tabBar}>
+        <FlatList
+          data={tabs}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          renderItem={({item}) => (
             <TouchableOpacity
               style={[
-                styles.themeButton,
-                settings.terminalTheme === 'dark' && styles.themeButtonActive
+                styles.tab,
+                activeTab === item.id && styles.activeTab
               ]}
-              onPress={() => updateSetting('terminalTheme', 'dark')}>
-              <Text style={styles.themeButtonText}>Dark</Text>
+              onPress={() => setActiveTab(item.id)}>
+              <Text style={styles.tabText}>{item.name}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.themeButton,
-                settings.terminalTheme === 'light' && styles.themeButtonActive
-              ]}
-              onPress={() => updateSetting('terminalTheme', 'light')}>
-              <Text style={styles.themeButtonText}>Light</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          )}
+          keyExtractor={(item) => item.id}
+        />
       </View>
 
-      {/* System Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>System</Text>
+      {activeTab === 'api' && renderApiSettings()}
+      {activeTab === 'startup' && renderStartupSettings()}
+      {activeTab === 'editor' && renderEditorSettings()}
+      {activeTab === 'display' && renderDisplaySettings()}
 
-        <View style={styles.systemInfo}>
-          <Text style={styles.systemInfoTitle}>Application Info</Text>
-          <Text style={styles.systemInfoItem}>Version: 1.0.0</Text>
-          <Text style={styles.systemInfoItem}>React Native: 0.72.0</Text>
-          <Text style={styles.systemInfoItem}>Engine: JavaScriptCore</Text>
-          <Text style={styles.systemInfoItem}>Platform: Android</Text>
-        </View>
-      </View>
-
-      {/* Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Actions</Text>
-
-        <TouchableOpacity style={styles.actionButton} onPress={exportSettings}>
-          <Text style={styles.actionButtonText}>📤 Export Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton} onPress={importSettings}>
-          <Text style={styles.actionButtonText}>📥 Import Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.resetButton} onPress={resetSettings}>
-          <Text style={styles.resetButtonText}>🔄 Reset to Default</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* About */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-
-        <View style={styles.aboutContent}>
-          <Text style={styles.appName}>Yousef Editor</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appDescription}>
-            A powerful code editor for Android with code-server integration
-          </Text>
-          <Text style={styles.appFeatures}>
-            Features:{'\n'}
-            • VS Code in browser{'\n'}
-            • Multi-tab support{'\n'}
-            • Integrated terminal{'\n'}
-            • Project management{'\n'}
-            • File explorer
-          </Text>
-          <Text style={styles.copyright}>
-            © 2024 Yousef Editor. All rights reserved.
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
+      <TouchableOpacity style={styles.saveButton} onPress={saveSettings}>
+        <Text style={styles.saveButtonText}>💾 Save All Settings</Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -283,6 +340,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1e1e1e',
   },
+  tabBar: {
+    backgroundColor: '#2d2d30',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#3e3e42',
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginHorizontal: 4,
+    borderRadius: 4,
+  },
+  activeTab: {
+    backgroundColor: '#0e639c',
+  },
+  tabText: {
+    color: '#ffffff',
+    fontSize: 13,
+  },
   section: {
     backgroundColor: '#252526',
     marginTop: 12,
@@ -290,9 +366,88 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  providerButton: {
+    backgroundColor: '#3e3e42',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  providerButtonActive: {
+    backgroundColor: '#0e639c',
+  },
+  providerButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+  },
+  input: {
+    backgroundColor: '#3c3c3c',
+    color: '#ffffff',
+    padding: 12,
+    borderRadius: 4,
+    fontSize: 14,
+    flex: 1,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#3c3c3c',
+    borderRadius: 4,
+  },
+  showButton: {
+    padding: 12,
+  },
+  showButtonText: {
+    fontSize: 18,
+  },
+  modelOption: {
+    backgroundColor: '#3c3c3c',
+    padding: 12,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  modelOptionActive: {
+    backgroundColor: '#0e639c',
+  },
+  modelName: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  modelNameActive: {
+    fontWeight: 'bold',
+  },
+  modelDescription: {
+    color: '#cccccc',
+    fontSize: 12,
+  },
+  modelDescriptionActive: {
+    color: '#e0e0e0',
+  },
+  testButton: {
+    backgroundColor: '#0e639c',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  testButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   settingRow: {
     flexDirection: 'row',
@@ -340,100 +495,17 @@ const styles = StyleSheet.create({
     minWidth: 30,
     textAlign: 'center',
   },
-  portButton: {
+  saveButton: {
     backgroundColor: '#0e639c',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 4,
-  },
-  portButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  themeSelector: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  themeButton: {
-    backgroundColor: '#3e3e42',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  themeButtonActive: {
-    backgroundColor: '#0e639c',
-  },
-  themeButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-  },
-  systemInfo: {
-    backgroundColor: '#2d2d30',
-    padding: 12,
-    borderRadius: 4,
-  },
-  systemInfoTitle: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  systemInfoItem: {
-    color: '#cccccc',
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  actionButton: {
-    backgroundColor: '#3e3e42',
-    padding: 12,
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  actionButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-  },
-  resetButton: {
-    backgroundColor: '#c50e1f',
-    padding: 12,
-    borderRadius: 4,
-  },
-  resetButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  aboutContent: {
+    padding: 16,
+    margin: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    padding: 12,
   },
-  appName: {
+  saveButtonText: {
     color: '#ffffff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  appVersion: {
-    color: '#0e639c',
     fontSize: 16,
-    marginBottom: 12,
-  },
-  appDescription: {
-    color: '#cccccc',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  appFeatures: {
-    color: '#999999',
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  copyright: {
-    color: '#666666',
-    fontSize: 10,
-    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
 

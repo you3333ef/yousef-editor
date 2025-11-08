@@ -5,6 +5,7 @@ import FileExplorer from './FileExplorer';
 import Terminal from './Terminal';
 import Settings from './Settings';
 import ProjectManager from './ProjectManager';
+import VHEditorFeatures from './VHEditorFeatures';
 
 const TABS = {
   CODE_EDITOR: { id: 'code-editor', title: 'Code Editor', icon: '📝' },
@@ -12,11 +13,15 @@ const TABS = {
   TERMINAL: { id: 'terminal', title: 'Terminal', icon: '💻' },
   PROJECT: { id: 'project', title: 'Projects', icon: '📦' },
   SETTINGS: { id: 'settings', title: 'Settings', icon: '⚙️' },
+  CLAUDE: { id: 'claude', title: 'Claude AI', icon: '🤖' },
+  STARTUP: { id: 'startup', title: 'Startup', icon: '🚀' },
+  API: { id: 'api', title: 'API Config', icon: '🔑' },
+  FEATURES: { id: 'features', title: 'Features', icon: '✨' },
 };
 
 const TabManager = ({isDesktopMode, onToggleMode}) => {
-  const [activeTab, setActiveTab] = useState('code-editor');
-  const [openTabs, setOpenTabs] = useState(['code-editor']);
+  const [activeTab, setActiveTab] = useState('features');
+  const [openTabs, setOpenTabs] = useState(['features', 'code-editor']);
 
   const openTab = (tabId) => {
     if (!openTabs.includes(tabId)) {
@@ -45,6 +50,8 @@ const TabManager = ({isDesktopMode, onToggleMode}) => {
         return <ProjectManager onOpenProject={openTab} />;
       case 'settings':
         return <Settings isDesktopMode={isDesktopMode} onToggleMode={onToggleMode} />;
+      case 'features':
+        return <VHEditorFeatures />;
       default:
         return <CodeEditor isDesktopMode={isDesktopMode} />;
     }
