@@ -29,16 +29,16 @@ jobs:
         yes | sdkmanager --licenses
         sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-    - name: Download Gradle wrapper JAR
+    - name: Install Gradle
       run: |
-        mkdir -p gradle/wrapper
-        curl -L https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+        cd /tmp
+        wget https://services.gradle.org/distributions/gradle-8.2-bin.zip -O gradle.zip
+        unzip -q gradle.zip
+        mv gradle-8.2 /opt/gradle
+        echo "/opt/gradle/bin" >> $GITHUB_PATH
 
     - name: Build with Gradle
-      run: ./gradlew assembleRelease
+      run: gradle assembleRelease
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
