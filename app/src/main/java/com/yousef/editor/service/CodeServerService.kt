@@ -72,6 +72,7 @@ class CodeServerService : Service() {
                 ACTION_START -> startService()
                 ACTION_STOP -> stopService()
                 ACTION_CHECK -> performConnectionCheck()
+                else -> Log.d(TAG, "Unknown action: $action")
             }
         }
         return START_STICKY

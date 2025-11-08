@@ -89,8 +89,8 @@ class TabManager(private val context: Context) {
 
         // If this was the current tab, switch to another tab
         if (currentTabId == tabId) {
-            currentTab = tabs.values.firstOrNull()?.id
-            notifyTabChanged(tabId, currentTab)
+            currentTabId = tabs.values.firstOrNull()?.id
+            notifyTabChanged(tabId, currentTabId)
         }
 
         notifyTabRemoved(tabId)

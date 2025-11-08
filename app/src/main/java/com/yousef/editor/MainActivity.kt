@@ -54,7 +54,6 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
 
     // UI components for new features
     private lateinit var connectionStatusView: View
-    private lateinit var connectionStatusText: TextView
     private lateinit var tabContainer: View
     private lateinit var noTabsView: View
 
@@ -96,7 +95,6 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
         externalButton = findViewById(R.id.external_button)
         errorText = findViewById(R.id.error_text)
         connectionStatusView = findViewById(R.id.connection_status)
-        connectionStatusText = findViewById(R.id.connection_status_text)
         tabContainer = findViewById(R.id.tab_container)
         noTabsView = findViewById(R.id.no_tabs_view)
 
@@ -300,22 +298,7 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
      * Update connection status
      */
     private fun updateConnectionStatus(isConnected: Boolean, url: String) {
-        val statusText = if (isConnected) {
-            getString(R.string.notification_connected)
-        } else {
-            getString(R.string.notification_disconnected)
-        }
-
-        connectionStatusText.text = "$statusText: $url"
-        connectionStatusText.setTextColor(
-            if (isConnected) {
-                getColor(R.color.success_color)
-            } else {
-                getColor(R.color.error_color)
-            }
-        )
-
-        // Update tab connection status
+        // Status updated via service notification
         val currentTab = tabManager.getCurrentTab()
         currentTab?.let {
             tabManager.updateTabConnection(it.id, isConnected)
@@ -419,7 +402,7 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.settings_code_server_url))
             .setView(input)
-            .setPositiveButton(getString(R.string.save)) { _, _ ->
+            .setPositiveButton(getString(R.string.connect)) { _, _ ->
                 val url = input.text.toString()
                 if (url.isNotEmpty() && settingsManager.isValidUrl(url)) {
                     settingsManager.setCodeServerUrl(url)
@@ -496,7 +479,7 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.about_title))
             .setMessage(message)
-            .setPositiveButton(getString(R.string.ok), null)
+            .setPositiveButton(getString(R.string.connect), null)
             .show()
     }
 
