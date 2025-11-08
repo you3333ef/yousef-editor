@@ -48,4 +48,9 @@
 - The app will be in **release mode** and ready for distribution
 - You'll need to enable "Unknown Sources" on your Android device to install it
 - The app is configured for Android 7.0+ (API 24)
-Token updated: Sat Nov  8 17:00:13 +03 2025
+
+## APK Signing
+
+- The app is automatically signed during the build process
+- The signing key is generated in GitHub Actions for each build
+- The APK will be valid and installable on Android devices
