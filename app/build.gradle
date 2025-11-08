@@ -19,7 +19,7 @@ android {
         release {
             keyAlias 'yousef-editor'
             keyPassword 'android123'
-            storeFile file('yousef-editor.keystore')
+            storeFile file('../yousef-editor.keystore')
             storePassword 'android123'
         }
     }
