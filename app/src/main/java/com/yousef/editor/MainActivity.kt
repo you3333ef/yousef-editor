@@ -21,8 +21,8 @@ import com.yousef.editor.service.CodeServerService
 import com.yousef.editor.service.CodeServerService.Companion.ACTION_CHECK
 import com.yousef.editor.service.CodeServerService.Companion.ACTION_START
 import com.yousef.editor.service.CodeServerService.Companion.ACTION_STOP
-import com.yousef.editor.tabs.Tab
 import com.yousef.editor.tabs.TabManager
+import com.yousef.editor.tabs.TabManager.Tab
 import com.yousef.editor.tabs.TabManager.TabChangeListener
 import java.net.HttpURLConnection
 import java.net.URL
