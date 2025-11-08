@@ -254,7 +254,7 @@ class CodeServerService : Service() {
             .setContentIntent(openPendingIntent)
             .addAction(R.drawable.ic_check, "Check", checkPendingIntent)
             .addAction(R.drawable.ic_close, "Stop", stopPendingIntent)
-            .setColor(getColor(R.color.primary_color))
+            .setColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_color))
             .build()
     }
 
