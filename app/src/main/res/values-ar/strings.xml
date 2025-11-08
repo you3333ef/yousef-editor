@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">محرر يوسف</string>
+    <string name="app_name_lower">yousef editor</string>
+
+    <!-- Connection Status -->
+    <string name="checking_connection">جاري التحقق من الاتصال...</string>
+    <string name="loading">جاري التحميل...</string>
+    <string name="connection_error">⚠️ خطأ في الاتصال</string>
+    <string name="cannot_connect">لا يمكن الاتصال بـ code-server</string>
+    <string name="not_responding">code-server لا يستجيب</string>
+    <string name="not_running">code-server غير مُشغّل</string>
+    <string name="make_sure_running">تأكد من أن code-server يعمل على المنفذ 8080</string>
+
+    <!-- Setup Instructions -->
+    <string name="to_fix_this">لإصلاح هذا:</string>
+    <string name="install_termux">تثبيت Termux</string>
+    <string name="try_again">حاول مرة أخرى</string>
+    <string name="use_external_url">استخدام رابط خارجي</string>
+    <string name="external_code_server_url">رابط code-server الخارجي</string>
+    <string name="enter_url">أدخل رابط مثيل code-server الخاص بك:</string>
+    <string name="connect">اتصل</string>
+    <string name="cancel">إلغاء</string>
+    <string name="url_hint">http://your-server:8080</string>
+
+    <!-- Commands -->
+    <string name="command_1">pkg install nodejs</string>
+    <string name="command_2">npm install -g code-server</string>
+    <string name="command_3">code-server --port 8080</string>
+
+    <!-- Error Messages -->
+    <string name="install_fdroid">يرجى تثبيت F-Droid أو تحميل Termux من GitHub</string>
+    <string name="url_required">يرجى إدخال رابط صالح</string>
+    <string name="connection_timeout">انتهت مهلة الاتصال. يرجى التحقق من تشغيل code-server.</string>
+
+    <!-- Accessibility -->
+    <string name="webview_content_description">WebView يعرض واجهة code-server</string>
+    <string name="error_screen_content_description">شاشة خطأ مع تعليمات الإعداد</string>
+    <string name="termux_button_content_description">زر لتثبيت Termux من F-Droid</string>
+    <string name="retry_button_content_description">زر لإعادة المحاولة للاتصال بـ code-server</string>
+    <string name="external_url_button_content_description">زر للاتصال بـ code-server خارجي</string>
+</resources>
