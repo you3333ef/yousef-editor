@@ -24,6 +24,8 @@ import com.yousef.editor.service.CodeServerService.Companion.ACTION_STOP
 import com.yousef.editor.tabs.TabManager
 import com.yousef.editor.tabs.TabManager.Tab
 import com.yousef.editor.tabs.TabManager.TabChangeListener
+import com.yousef.editor.termux.TermuxManager
+import com.yousef.editor.termux.TermuxStatus
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
     // New VHEditor-inspired features
     private lateinit var settingsManager: SettingsManager
     private lateinit var tabManager: TabManager
+    private lateinit var termuxManager: TermuxManager
 
     // Service
     private var codeServerService: CodeServerService? = null
@@ -56,6 +59,8 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
     private lateinit var connectionStatusView: View
     private lateinit var tabContainer: View
     private lateinit var noTabsView: View
+    private lateinit var termuxStatusView: View
+    private lateinit var termuxStatusText: TextView
 
     // Tab management
     private var isServiceEnabled = false
@@ -78,6 +83,7 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
         settingsManager = SettingsManager(this)
         tabManager = TabManager(this)
         tabManager.addListener(this)
+        termuxManager = TermuxManager(this)
     }
 
     /**
@@ -97,6 +103,8 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
         connectionStatusView = findViewById(R.id.connection_status)
         tabContainer = findViewById(R.id.tab_container)
         noTabsView = findViewById(R.id.no_tabs_view)
+        termuxStatusView = findViewById(R.id.termux_status)
+        termuxStatusText = findViewById(R.id.termux_status_text)
 
         // Setup action bar
         supportActionBar?.title = getString(R.string.app_name)
@@ -193,6 +201,9 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
      * Load initial tab
      */
     private fun loadInitialTab() {
+        // Check Termux status and offer auto-setup
+        checkTermuxStatusAndOfferSetup()
+
         val savedTab = tabManager.getCurrentTab()
         if (savedTab != null) {
             // Load saved tab
@@ -202,6 +213,123 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
             val url = settingsManager.getCodeServerUrl()
             val tab = tabManager.addTab(url, getString(R.string.tab_local_server))
             loadUrl(tab.url)
+        }
+    }
+
+    /**
+     * Check Termux status and offer auto-setup if needed
+     */
+    private fun checkTermuxStatusAndOfferSetup() {
+        val statusInfo = termuxManager.getStatusInfo()
+
+        when (statusInfo.status) {
+            TermuxStatus.TERMUX_NOT_INSTALLED -> {
+                showTermuxNotInstalledDialog()
+            }
+            TermuxStatus.CODE_SERVER_NOT_INSTALLED -> {
+                showCodeServerNotInstalledDialog()
+            }
+            TermuxStatus.CODE_SERVER_STOPPED -> {
+                showCodeServerStoppedDialog()
+            }
+            else -> {
+                // Everything is fine
+                updateTermuxStatusUI(statusInfo)
+            }
+        }
+    }
+
+    /**
+     * Show Termux not installed dialog
+     */
+    private fun showTermuxNotInstalledDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Install Termux")
+            .setMessage("Termux is required to run code-server. Would you like to open F-Droid to install Termux?")
+            .setPositiveButton("Install Termux") { _, _ ->
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    data = android.net.Uri.parse("https://f-droid.org/packages/com.termux/")
+                }
+                startActivity(intent)
+                finish()
+            }
+            .setNegativeButton("Exit", { _, _ ->
+                finish()
+            })
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Show code-server not installed dialog
+     */
+    private fun showCodeServerNotInstalledDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Install code-server")
+            .setMessage("code-server is not installed in Termux. Would you like to install it now? This may take a few minutes.")
+            .setPositiveButton("Install") { _, _ ->
+                installCodeServer()
+            }
+            .setNegativeButton("Later", null)
+            .show()
+    }
+
+    /**
+     * Show code-server stopped dialog
+     */
+    private fun showCodeServerStoppedDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Start code-server")
+            .setMessage("code-server is installed but not running. Would you like to start it?")
+            .setPositiveButton("Start") { _, _ ->
+                startCodeServer()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Install code-server via Termux
+     */
+    private fun installCodeServer() {
+        Toast.makeText(this, "Installing code-server. Please wait...", Toast.LENGTH_LONG).show()
+        val result = termuxManager.installCodeServer()
+        if (result) {
+            Toast.makeText(this, "Installation started. Please wait 5-10 minutes.", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Failed to start installation", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Start code-server
+     */
+    private fun startCodeServer() {
+        val result = termuxManager.startCodeServer()
+        if (result) {
+            Toast.makeText(this, "Starting code-server...", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Failed to start code-server", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Update Termux status UI
+     */
+    private fun updateTermuxStatusUI(statusInfo: com.yousef.editor.termux.TermuxInfo) {
+        val statusText = when (statusInfo.status) {
+            TermuxStatus.TERMUX_NOT_INSTALLED -> "Termux not installed"
+            TermuxStatus.TERMUX_API_NOT_INSTALLED -> "Termux API not installed"
+            TermuxStatus.CODE_SERVER_NOT_INSTALLED -> "code-server not installed"
+            TermuxStatus.CODE_SERVER_STOPPED -> "code-server stopped"
+            TermuxStatus.CODE_SERVER_RUNNING -> "code-server running on port 8080"
+        }
+
+        termuxStatusText.text = statusText
+        termuxStatusView.visibility = if (statusInfo.status == TermuxStatus.CODE_SERVER_RUNNING) {
+            android.view.View.GONE
+        } else {
+            android.view.View.VISIBLE
         }
     }
 
@@ -328,6 +456,22 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
             }
             R.id.action_refresh -> {
                 webView.reload()
+                true
+            }
+            R.id.action_termux_setup -> {
+                showTermuxSetupDialog()
+                true
+            }
+            R.id.action_start_code_server -> {
+                startCodeServer()
+                true
+            }
+            R.id.action_termux_status -> {
+                showTermuxStatusDialog()
+                true
+            }
+            R.id.action_open_termux -> {
+                termuxManager.openTermux()
                 true
             }
             R.id.action_settings -> {
@@ -480,6 +624,99 @@ class MainActivity : AppCompatActivity(), TabManager.TabChangeListener, ServiceC
             .setTitle(getString(R.string.about_title))
             .setMessage(message)
             .setPositiveButton(getString(R.string.connect), null)
+            .show()
+    }
+
+    /**
+     * Show Termux setup dialog
+     */
+    private fun showTermuxSetupDialog() {
+        val statusInfo = termuxManager.getStatusInfo()
+        val statusText = when (statusInfo.status) {
+            TermuxStatus.TERMUX_NOT_INSTALLED -> "Termux is not installed"
+            TermuxStatus.TERMUX_API_NOT_INSTALLED -> "Termux API is not installed"
+            TermuxStatus.CODE_SERVER_NOT_INSTALLED -> "code-server is not installed"
+            TermuxStatus.CODE_SERVER_STOPPED -> "code-server is installed but not running"
+            TermuxStatus.CODE_SERVER_RUNNING -> "code-server is running on port 8080"
+        }
+
+        val actions = when (statusInfo.status) {
+            TermuxStatus.TERMUX_NOT_INSTALLED -> arrayOf("Install Termux", "Cancel")
+            TermuxStatus.TERMUX_API_NOT_INSTALLED -> arrayOf("Install Termux API", "Open Termux", "Cancel")
+            TermuxStatus.CODE_SERVER_NOT_INSTALLED -> arrayOf("Install code-server", "Open Termux", "Cancel")
+            TermuxStatus.CODE_SERVER_STOPPED -> arrayOf("Start code-server", "Open Termux", "Cancel")
+            TermuxStatus.CODE_SERVER_RUNNING -> arrayOf("Stop code-server", "Open Termux", "Close")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Termux Setup")
+            .setMessage("Status: $statusText")
+            .setItems(actions) { _, which ->
+                when (statusInfo.status) {
+                    TermuxStatus.TERMUX_NOT_INSTALLED -> {
+                        if (which == 0) {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                data = Uri.parse("https://f-droid.org/packages/com.termux/")
+                            }
+                            startActivity(intent)
+                        }
+                    }
+                    TermuxStatus.TERMUX_API_NOT_INSTALLED -> {
+                        when (which) {
+                            0 -> {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://f-droid.org/packages/com.termux/")
+                                }
+                                startActivity(intent)
+                            }
+                            1 -> termuxManager.openTermux()
+                        }
+                    }
+                    TermuxStatus.CODE_SERVER_NOT_INSTALLED -> {
+                        when (which) {
+                            0 -> installCodeServer()
+                            1 -> termuxManager.openTermux()
+                        }
+                    }
+                    TermuxStatus.CODE_SERVER_STOPPED -> {
+                        when (which) {
+                            0 -> startCodeServer()
+                            1 -> termuxManager.openTermux()
+                        }
+                    }
+                    TermuxStatus.CODE_SERVER_RUNNING -> {
+                        when (which) {
+                            0 -> termuxManager.stopCodeServer()
+                            1 -> termuxManager.openTermux()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Show Termux status dialog
+     */
+    private fun showTermuxStatusDialog() {
+        val statusInfo = termuxManager.getStatusInfo()
+        val message = """
+            Termux Installed: ${if (statusInfo.isTermuxInstalled) "✅ Yes" else "❌ No"}
+            Termux API: ${if (statusInfo.isTermuxApiInstalled) "✅ Yes" else "❌ No"}
+            code-server Installed: ${if (statusInfo.isCodeServerInstalled) "✅ Yes" else "❌ No"}
+            code-server Running: ${if (statusInfo.isCodeServerRunning) "✅ Yes" else "❌ No"}
+
+            URL: ${statusInfo.codeServerUrl.ifEmpty { "N/A" }}
+        """.trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("Termux Status")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Open Termux") { _, _ ->
+                termuxManager.openTermux()
+            }
             .show()
     }
 

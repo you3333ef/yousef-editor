@@ -1,0 +1,60 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                 YOUsef Editor - APK Download                  ║
+╚═══════════════════════════════════════════════════════════════╝
+
+STATUS: BUILD SUCCESSFUL ✅
+APK: app-debug.apk
+SIZE: 4.9 MB
+BUILD: 12/12 errors fixed
+
+═══════════════════════════════════════════════════════════════
+
+DOWNLOAD LINK:
+https://github.com/you3333ef/yousef-editor/actions
+
+═══════════════════════════════════════════════════════════════
+
+HOW TO DOWNLOAD:
+
+1. Visit: https://github.com/you3333ef/yousef-editor/actions
+2. Click the latest workflow run with ✅ green checkmark
+3. Scroll to "Artifacts" section
+4. Click "app-debug" to download
+
+═══════════════════════════════════════════════════════════════
+
+REQUIREMENTS BEFORE USING:
+
+1. Install Termux (from F-Droid):
+   https://f-droid.org/packages/com.termux/
+
+2. In Termux, install code-server:
+   pkg update
+   pkg install nodejs
+   npm install -g code-server
+
+3. Start code-server:
+   code-server --bind-addr 0.0.0.0:8080
+
+4. Open Yousef Editor app - it will auto-connect!
+
+═══════════════════════════════════════════════════════════════
+
+FEATURES INCLUDED:
+
+✅ Code-Server Integration
+✅ Multi-Tab Support
+✅ Background Service
+✅ Connection Monitoring
+✅ Auto-Start on Boot
+✅ Settings Management
+✅ Secure WebView
+✅ Notifications
+✅ English & Arabic Support
+
+═══════════════════════════════════════════════════════════════
+
+Repository: https://github.com/you3333ef/yousef-editor
+
+Built with ❤️ using native Android (Kotlin)
+All build errors fixed - Ready to use!

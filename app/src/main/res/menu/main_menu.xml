@@ -21,6 +21,26 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_termux_setup"
+        android:title="Termux Setup"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_start_code_server"
+        android:title="Start code-server"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_termux_status"
+        android:title="Termux Status"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_open_termux"
+        android:title="Open Termux"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_settings"
         android:icon="@android:drawable/ic_menu_preferences"
         android:title="@string/menu_settings"
